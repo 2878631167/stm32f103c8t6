@@ -1,0 +1,12 @@
+build/
+*.o
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.d
+.vscode/
+.DS_Store
+*.swp
+*.bak
