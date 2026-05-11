@@ -1,0 +1,12 @@
+{
+    "cmake.cmakePath": "D:/STM32_Dev/cmake-4.3.0-windows-x86_64/bin/cmake.exe",
+    "cmake.configureOnOpen": false,
+    "cmake.generator": "Ninja",
+    "cmake.makeProgram": "D:\\STM32_Dev\\ninja\\ninja.exe",
+    "cmake.configureSettings": {
+        "CMAKE_TOOLCHAIN_FILE": "D:\\qjn\\test\\Template_Lite\\arm-none-eabi.cmake",
+        "CMAKE_MAKE_PROGRAM": "D:\\STM32_Dev\\ninja\\ninja.exe",
+        "CMAKE_ASM_COMPILER": "D:\\STM32_Dev\\arm-gnu-toolchain-15.2.rel1-mingw-w64-i686-arm-none-eabi\\bin\\arm-none-eabi-gcc.exe"
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+}

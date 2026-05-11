@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "cmake --build build",
+            "options": {
+                "cwd": "D:\\qjn\\test\\Template_Lite"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "rmdir /s /q build",
+            "options": {
+                "cwd": "D:\\qjn\\test\\Template_Lite"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Flash",
+            "type": "shell",
+            "command": "cmake --build build --target flash",
+            "options": {
+                "cwd": "D:\\qjn\\test\\Template_Lite"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Configure",
+            "type": "shell",
+            "command": "cmake -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=arm-none-eabi.cmake",
+            "options": {
+                "cwd": "D:\\qjn\\test\\Template_Lite"
+            },
+            "group": "build"
+        }
+    ]
+}

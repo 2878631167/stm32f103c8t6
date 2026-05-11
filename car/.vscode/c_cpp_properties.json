@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "STM32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:/qjn/test/test/1_Platform/CMSIS/CM3/CoreSupport",
+                "D:/qjn/test/test/1_Platform/CMSIS/CM3/DeviceSupport/ST/STM32F10x",
+                "D:/qjn/test/test/2_HAL/STM32F10x_StdPeriph_Driver/inc",
+                "D:/qjn/test/test/3_BSP",
+                "D:/qjn/test/test/4_App"
+            ],
+            "defines": [
+                "STM32F10X_MD",
+                "USE_STDPERIPH_DRIVER"
+            ],
+            "compilerPath": "D:/STM32_Dev/arm-gnu-toolchain-15.2.rel1-mingw-w64-i686-arm-none-eabi/bin/arm-none-eabi-gcc.exe",
+            "cStandard": "c99",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}
