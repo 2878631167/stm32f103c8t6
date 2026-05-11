@@ -1,0 +1,40 @@
+#include "Bsp.h"
+#include <stdio.h>
+
+/**
+ * @brief PID算法测试函数
+ * @note 演示增量式和位置式PID的使用方法
+ */
+void Test_PID(void)
+{
+    PID_TypeDef pid;
+    float target = 100.0f;  // 目标值
+    float actual = 0.0f;    // 实际值（模拟反馈）
+    float output = 0.0f;    // PID输出
+    
+    // 初始化位置式PID
+    // 参数: Kp=2.0, Ki=0.5, Kd=1.0, 最大输出=100, 最小输出=-100
+    PID_Init(&pid, 2.0f, 0.5f, 1.0f, 100.0f, -100.0f);
+    
+    OLED_Clear();
+    OLED_ShowString(1, 1, "PID Test");
+    
+    // 模拟PID控制过程
+    for (int i = 0; i < 20; i++) {
+        // 使用位置式PID计算
+        output = PID_Positional(&pid, target, actual);
+        
+        // 模拟系统响应（简化模型）
+        actual += output * 0.1f;
+        
+        // 显示结果
+        char buf[32];
+        sprintf(buf, "Out:%.1f Act:%.1f", output, actual);
+        OLED_ShowString(2, 1, buf);
+        
+        Delay_Ms(100);
+    }
+    
+    // 重置PID
+    PID_Reset(&pid);
+}

@@ -42,6 +42,7 @@ flash.bat
 - OLED (OLED)
 - 蓝牙 (BT)
 - 电机驱动 (L298N)
+- PID控制算法 (PID) ⭐ 新增
 
 ## 工具链
 

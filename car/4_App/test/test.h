@@ -37,4 +37,6 @@ void Test_BT_SendLoop(void);
 void Test_BT_ShowRxData(void);
 void Test_BT_Echo(void);
 
+void Test_PID(void);
+
 #endif
