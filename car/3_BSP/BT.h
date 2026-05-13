@@ -25,4 +25,25 @@ void BT_SendPIDStatus(void);
 uint8_t BT_ParsePIDParams(void);
 void BT_ProcessPacket(void);
 
+/**
+ * @brief 发送设备完整状态信息
+ * @note 包括电机状态、循迹传感器、PID参数等
+ */
+void BT_SendDeviceStatus(void);
+
+/**
+ * @brief 发送电机状态
+ */
+void BT_SendMotorStatus(void);
+
+/**
+ * @brief 发送循迹传感器状态
+ */
+void BT_SendTrackStatus(void);
+
+/**
+ * @brief 发送系统信息
+ */
+void BT_SendSystemInfo(void);
+
 #endif

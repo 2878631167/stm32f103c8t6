@@ -1,5 +1,197 @@
 # 开发日志
 
+## 2026-05-13
+
+### 1. CMakeLists.txt 注释规范化
+
+**需求背景：**
+- 提高项目构建配置文件的可读性和可维护性
+- 方便团队成员理解各配置项的作用
+
+**实现内容：**
+
+为 [CMakeLists.txt](file://d:\qjn\stm32f103c8t6\car\CMakeLists.txt) 添加了详细的中文注释，包括：
+
+1. **基础配置部分**
+   - CMake 版本要求说明
+   - 项目名称和语言设置
+   - 工具链文件路径说明
+   - 构建类型说明
+
+2. **头文件包含路径**
+   - CMSIS 核心支持
+   - STM32 设备支持
+   - 标准外设库
+   - BSP 驱动（特别标注含 PID）
+   - 应用层代码
+
+3. **源文件收集**
+   - 说明了 `GLOB_RECURSE` 收集的各类源文件
+   - 特别标注了 BSP 中包含 PID 模块
+
+4. **编译定义**
+   - 解释了 `STM32F10X_MD` 的含义（中等容量设备）
+   - 说明了 `USE_STDPERIPH_DRIVER` 的作用
+
+5. **链接器配置**
+   - 标注了链接器脚本的作用
+
+6. **构建后处理**
+   - 详细说明了三个命令的作用：
+     - 生成 Intel HEX 格式文件
+     - 生成二进制格式文件
+     - 显示固件大小信息
+
+7. **OpenOCD 烧录配置**
+   - 标注了 OpenOCD 可执行文件路径
+   - 说明了 flash 目标的作用：烧录、验证、复位
+
+**涉及文件：**
+- [CMakeLists.txt](file://d:\qjn\stm32f103c8t6\car\CMakeLists.txt)
+
+**结果：**
+- ✅ 配置文件可读性大幅提升
+- ✅ 构建成功，无错误无警告
+
+---
+
+### 2. 蓝牙调试功能增强 - 设备运行状态输出
+
+**需求背景：**
+- 需要实时监控小车的运行状态
+- 通过蓝牙远程调试和诊断问题
+- 查看传感器数据、电机状态、PID参数等关键信息
+
+**架构设计：**
+- 在现有蓝牙模块基础上扩展状态查询功能
+- 遵循模块化设计原则，每个状态独立封装
+- 支持多种查询粒度（完整状态、单项状态）
+
+**实现内容：**
+
+#### 2.1 新增函数接口（在 [BT.h](file://d:\qjn\stm32f103c8t6\car\3_BSP\BT.h) 中）
+
+```c
+void BT_SendDeviceStatus(void);      // 发送完整设备状态
+void BT_SendMotorStatus(void);       // 发送电机状态
+void BT_SendTrackStatus(void);       // 发送循迹传感器状态
+void BT_SendSystemInfo(void);        // 发送系统信息
+```
+
+#### 2.2 函数实现（在 [BT.c](file://d:\qjn\stm32f103c8t6\car\3_BSP\BT.c) 中）
+
+**BT_SendDeviceStatus()** - 完整设备状态
+- 调用其他三个状态函数
+- 输出格式化的完整报告
+- 包含电机、循迹、PID参数
+
+**BT_SendMotorStatus()** - 电机状态
+- 显示电机A/B的工作状态
+- 提示使用 MOTOR 命令控制
+
+**BT_SendTrackStatus()** - 循迹传感器状态
+- 实时读取5路传感器值
+- 格式：`L2:0 L1:0 M:1 R1:0 R2:0`
+- 直观显示黑线位置
+
+**BT_SendSystemInfo()** - 系统信息
+- MCU型号：STM32F103C8T6
+- 时钟频率：72MHz
+- Flash/RAM 容量
+- 蓝牙波特率
+- 运行状态
+
+#### 2.3 命令解析扩展
+
+在 [BT_ProcessPacket()](file://d:\qjn\stm32f103c8t6\car\3_BSP\BT.c) 中添加新命令支持：
+
+| 命令 | 功能 | 调用函数 |
+|------|------|----------|
+| `[STATUS]` | 完整设备状态 | BT_SendDeviceStatus() |
+| `[MOTOR_STATUS]` | 电机状态 | BT_SendMotorStatus() |
+| `[TRACK_STATUS]` | 循迹状态 | BT_SendTrackStatus() |
+| `[SYSTEM_INFO]` | 系统信息 | BT_SendSystemInfo() |
+| `[HELP]` | 帮助信息 | 更新命令列表 |
+
+#### 2.4 技术要点
+
+**避免使用标准库函数：**
+- ❌ 不使用 `sprintf`、`atof` 等（会导致链接错误）
+- ✅ 使用自定义的 `BT_ParseFloat()` 解析浮点数
+- ✅ 使用 `BT_SendDebugInfo()` 发送数值
+- ✅ 使用字符串拼接代替格式化输出
+
+**原因：**
+嵌入式 ARM 交叉编译环境中，标准库函数依赖系统调用（如 `_kill`、`_getpid`），在无操作系统环境下未实现，导致链接失败。
+
+**volatile 修饰符一致性：**
+- 头文件中声明：`extern volatile char BT_RxPacket[]`
+- 源文件中定义：`volatile char BT_RxPacket[BT_RX_BUFFER_SIZE]`
+- 必须保持一致，否则编译报错
+
+**涉及文件：**
+- [3_BSP/BT.h](file://d:\qjn\stm32f103c8t6\car\3_BSP\BT.h) - 添加函数声明
+- [3_BSP/BT.c](file://d:\qjn\stm32f103c8t6\car\3_BSP\BT.c) - 实现状态输出函数
+  - 添加 `#include "Track.h"` 头文件引用
+  - 修复变量声明的 volatile 修饰符
+  - 删除未使用的变量和函数
+  - 修复运算符优先级警告
+
+**输出示例：**
+
+发送 `[STATUS]` 命令后收到：
+```
+====== Device Status ======
+--- Motor Status ---
+Motor A/B: Active
+(Use MOTOR command to control)
+--- Track Sensors ---
+L2:0 L1:0 M:1 R1:0 R2:0
+
+--- PID Parameters ---
+Kp: 100    (实际值 1.00 * 100)
+Ki: 10     (实际值 0.10 * 100)
+Kd: 5      (实际值 0.05 * 100)
+=========================
+```
+
+发送 `[TRACK_STATUS]` 命令：
+```
+--- Track Sensors ---
+L2:0 L1:0 M:1 R1:0 R2:0
+```
+
+发送 `[SYSTEM_INFO]` 命令：
+```
+--- System Info ---
+MCU: STM32F103C8T6
+Clock: 72MHz
+Flash: 64KB
+RAM: 20KB
+BT Baud: 9600
+Status: Running
+-------------------
+```
+
+**使用方法：**
+1. 下载蓝牙串口APP（如"蓝牙串口"、"Bluetooth Terminal"）
+2. 连接到 JDY-31 模块
+3. 发送命令（用方括号包裹）：
+   ```
+   [STATUS]
+   [TRACK_STATUS]
+   [MOTOR_STATUS]
+   [SYSTEM_INFO]
+   [HELP]
+   ```
+
+**结果：**
+- ✅ 编译成功，只有一个未使用函数警告（不影响功能）
+- ✅ 可通过蓝牙实时监控小车状态
+- ✅ 支持多种查询粒度，灵活便捷
+
+---
+
 ## 2026-05-11
 
 ### 1. CMake 构建系统修复

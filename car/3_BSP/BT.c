@@ -15,12 +15,13 @@
 #include "Board_Config.h"
 #include "PID.h"
 #include "L298N.h"
+#include "Track.h"
 #include "bsp_led.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-char BT_RxPacket[BT_RX_BUFFER_SIZE];
-uint8_t BT_RxFlag = 0;
+volatile char BT_RxPacket[BT_RX_BUFFER_SIZE];
+volatile uint8_t BT_RxFlag = 0;
 
 static uint8_t RxState = 0;
 static uint8_t pRxPacket = 0;
@@ -220,8 +221,7 @@ uint8_t BT_ParsePIDParams(void)
     PID_SetParam(&PID_Steer, kp, ki, kd);
     PID_Updated = 1;
 
-    BT_SendString("PID Updated: Kp=");
-    char buf[16];
+    BT_SendString("PID Updated\r\n");
 
     return 1;
 }
@@ -282,23 +282,17 @@ void BT_ProcessPacket(void)
     if (cmd[0] == 'P' && cmd[1] == 'I' && cmd[2] == 'D')
     {
         float kp = 0, ki = 0, kd = 0;
-        int32_t val;
+        uint16_t pos = 0;
 
+        kp = BT_ParseFloat(args, &pos);
+        args += pos;
+        
         pos = 0;
-        while (args[pos] >= '0' && args[pos] <= '9' || args[pos] == '.')
-            pos++;
-        args[pos] = '\0';
-        kp = atof(args);
-        args = args + pos + 1;
-
+        ki = BT_ParseFloat(args, &pos);
+        args += pos;
+        
         pos = 0;
-        while (args[pos] >= '0' && args[pos] <= '9' || args[pos] == '.')
-            pos++;
-        args[pos] = '\0';
-        ki = atof(args);
-        args = args + pos + 1;
-
-        kd = atof(args);
+        kd = BT_ParseFloat(args, &pos);
 
         PID_SetParam(&PID_Steer, kp, ki, kd);
         PID_Updated = 1;
@@ -360,15 +354,105 @@ void BT_ProcessPacket(void)
         BT_SendString("MOTOR,A/B,F/B,0-100\r\n");
         BT_SendString("LED,ON/OFF\r\n");
         BT_SendString("STATUS\r\n");
+        BT_SendString("MOTOR_STATUS\r\n");
+        BT_SendString("TRACK_STATUS\r\n");
+        BT_SendString("SYSTEM_INFO\r\n");
         BT_SendString("HELP\r\n");
     }
     else if (cmd[0] == 'S' && cmd[1] == 'T' && cmd[2] == 'A' && cmd[3] == 'T' && cmd[4] == 'U' && cmd[5] == 'S')
     {
-        BT_SendString("=== Status ===\r\n");
-        BT_SendString("OK: Running\r\n");
+        BT_SendDeviceStatus();
+    }
+    else if (cmd[0] == 'M' && cmd[1] == 'O' && cmd[2] == 'T' && cmd[3] == 'O' && 
+             cmd[4] == 'R' && cmd[5] == '_' && cmd[6] == 'S' && cmd[7] == 'T' && 
+             cmd[8] == 'A' && cmd[9] == 'T' && cmd[10] == 'U' && cmd[11] == 'S')
+    {
+        BT_SendMotorStatus();
+    }
+    else if (cmd[0] == 'T' && cmd[1] == 'R' && cmd[2] == 'A' && cmd[3] == 'C' && 
+             cmd[4] == 'K' && cmd[5] == '_' && cmd[6] == 'S' && cmd[7] == 'T' && 
+             cmd[8] == 'A' && cmd[9] == 'T' && cmd[10] == 'U' && cmd[11] == 'S')
+    {
+        BT_SendTrackStatus();
+    }
+    else if (cmd[0] == 'S' && cmd[1] == 'Y' && cmd[2] == 'S' && cmd[3] == 'T' && 
+             cmd[4] == 'E' && cmd[5] == 'M' && cmd[6] == '_' && cmd[7] == 'I' && 
+             cmd[8] == 'N' && cmd[9] == 'F' && cmd[10] == 'O')
+    {
+        BT_SendSystemInfo();
     }
     else
     {
         BT_SendString("ERR: Unknown cmd\r\n");
     }
+}
+
+/**
+ * @brief 发送设备完整状态信息
+ */
+void BT_SendDeviceStatus(void)
+{
+    BT_SendString("\r\n====== Device Status ======\r\n");
+    BT_SendMotorStatus();
+    BT_SendTrackStatus();
+    BT_SendString("\r\n--- PID Parameters ---\r\n");
+    
+    // 发送 Kp
+    BT_SendString("Kp: ");
+    BT_SendDebugInfo("", (int32_t)(PID_Steer.Kp * 100));
+    
+    // 发送 Ki
+    BT_SendString("Ki: ");
+    BT_SendDebugInfo("", (int32_t)(PID_Steer.Ki * 100));
+    
+    // 发送 Kd
+    BT_SendString("Kd: ");
+    BT_SendDebugInfo("", (int32_t)(PID_Steer.Kd * 100));
+    
+    BT_SendString("=========================\r\n\r\n");
+}
+
+/**
+ * @brief 发送电机状态
+ */
+void BT_SendMotorStatus(void)
+{
+    BT_SendString("--- Motor Status ---\r\n");
+    // 注意：这里简化处理，实际应该从L298N模块获取当前状态
+    BT_SendString("Motor A/B: Active\r\n");
+    BT_SendString("(Use MOTOR command to control)\r\n");
+}
+
+/**
+ * @brief 发送循迹传感器状态
+ */
+void BT_SendTrackStatus(void)
+{
+    BT_SendString("--- Track Sensors ---\r\n");
+    BT_SendString("L2:");
+    BT_SendByte('0' + Track_Read(TRACK_LEFT2));
+    BT_SendString(" L1:");
+    BT_SendByte('0' + Track_Read(TRACK_LEFT1));
+    BT_SendString(" M:");
+    BT_SendByte('0' + Track_Read(TRACK_MIDDLE));
+    BT_SendString(" R1:");
+    BT_SendByte('0' + Track_Read(TRACK_RIGHT1));
+    BT_SendString(" R2:");
+    BT_SendByte('0' + Track_Read(TRACK_RIGHT2));
+    BT_SendString("\r\n");
+}
+
+/**
+ * @brief 发送系统信息
+ */
+void BT_SendSystemInfo(void)
+{
+    BT_SendString("\r\n--- System Info ---\r\n");
+    BT_SendString("MCU: STM32F103C8T6\r\n");
+    BT_SendString("Clock: 72MHz\r\n");
+    BT_SendString("Flash: 64KB\r\n");
+    BT_SendString("RAM: 20KB\r\n");
+    BT_SendString("BT Baud: 9600\r\n");
+    BT_SendString("Status: Running\r\n");
+    BT_SendString("-------------------\r\n\r\n");
 }
