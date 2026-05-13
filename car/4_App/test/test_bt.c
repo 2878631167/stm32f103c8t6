@@ -13,7 +13,8 @@ void Test_BT_Init(void)
     BT_Init();
     OLED_Init();
     OLED_Clear();
-    OLED_ShowString(1, 1, "BT Ready");
+    OLED_ShowString(0, 0, "BT Ready", OLED_6X8);
+    OLED_Update();
     BT_SendString("BT Init OK\r\n");
 }
 
@@ -45,21 +46,23 @@ void Test_BT_ShowRxData(void)
     BT_Init();
     OLED_Init();
     OLED_Clear();
-    OLED_ShowString(1, 1, "Waiting...");
+    OLED_ShowString(0, 0, "Waiting...", OLED_6X8);
+    OLED_Update();
 
     while(1)
     {
         if (BT_RxFlag == 1)
         {
             OLED_Clear();
-            OLED_ShowString(1, 1, "RX:");
+            OLED_ShowString(0, 0, "RX:", OLED_6X8);
             char temp[BT_RX_BUFFER_SIZE];
             for (uint16_t i = 0; i < BT_RX_BUFFER_SIZE && BT_RxPacket[i] != '\0'; i++)
             {
                 temp[i] = BT_RxPacket[i];
             }
             temp[BT_RX_BUFFER_SIZE - 1] = '\0';
-            OLED_ShowString(2, 1, temp);
+            OLED_ShowString(0, 8, temp, OLED_6X8);
+            OLED_Update();
             BT_RxFlag = 0;
         }
         Delay_Ms(100);

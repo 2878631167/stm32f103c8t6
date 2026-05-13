@@ -17,7 +17,8 @@ void Test_PID(void)
     PID_Init(&pid, 2.0f, 0.5f, 1.0f, 100.0f, -100.0f);
     
     OLED_Clear();
-    OLED_ShowString(1, 1, "PID Test");
+    OLED_ShowString(0, 0, "PID Test", OLED_6X8);
+    OLED_Update();
     
     // 模拟PID控制过程
     for (int i = 0; i < 20; i++) {
@@ -30,7 +31,8 @@ void Test_PID(void)
         // 显示结果
         char buf[32];
         sprintf(buf, "Out:%.1f Act:%.1f", output, actual);
-        OLED_ShowString(2, 1, buf);
+        OLED_ShowString(0, 8, buf, OLED_6X8);
+        OLED_Update();
         
         Delay_Ms(100);
     }
