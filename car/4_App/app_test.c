@@ -8,6 +8,7 @@
 
 #include "app_test.h"
 #include "app_car.h"
+#include "StateMachine.h"
 #include <string.h>
 
 /* 当前测试项 */

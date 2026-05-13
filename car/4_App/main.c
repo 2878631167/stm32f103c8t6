@@ -20,6 +20,9 @@ static void System_Init(void)
     /* 应用层初始化 */
     Car_Init();        /* 小车应用初始化 */
     Test_Init();       /* 测试框架初始化 */
+    
+    /* 状态机初始化 */
+    SystemStateMachine_Init();  /* 系统状态机初始化 */
 }
 
 /**
@@ -45,15 +48,21 @@ int main(void)
         {
             BT_ProcessPacket();
             Test_HandleCommand();  /* 测试命令处理 */
+            
+            /* 根据蓝牙命令触发状态机事件 */
+            // 这里可以添加基于状态机的命令处理逻辑
         }
         
-        /* 3.2 运行应用逻辑 */
+        /* 3.2 运行状态机 */
+        SM_Run(System_GetStateMachine());
+        
+        /* 3.3 运行应用逻辑 */
         Car_Run();     /* 小车业务逻辑（循迹、控制等） */
         
-        /* 3.3 更新显示 */
+        /* 3.4 更新显示 */
         Car_UpdateDisplay();
         
-        /* 3.4 延时（控制循环频率 ~100Hz） */
+        /* 3.5 延时（控制循环频率 ~100Hz） */
         Delay_Ms(10);
     }
 }

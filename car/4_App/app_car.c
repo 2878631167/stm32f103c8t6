@@ -7,6 +7,7 @@
  */
 
 #include "app_car.h"
+#include "StateMachine.h"
 
 /* 全局状态实例 */
 CarState_TypeDef CarState;
@@ -42,22 +43,31 @@ void Car_Init(void)
  */
 void Car_Run(void)
 {
-    switch (CarState.mode)
+    /* 获取当前系统状态 */
+    StateID_TypeDef sys_state = SM_GetCurrentState(System_GetStateMachine());
+    
+    /* 根据系统状态决定小车行为 */
+    switch (sys_state)
     {
-        case CAR_MODE_STOP:
+        case STATE_ID_IDLE:
             Car_Stop();
             break;
             
-        case CAR_MODE_MANUAL:
+        case STATE_ID_MANUAL_CTRL:
             Car_ManualControl();
             break;
             
-        case CAR_MODE_TRACK:
+        case STATE_ID_AUTO_TRACK:
             Car_TrackControl();
             break;
             
-        case CAR_MODE_TEST:
+        case STATE_ID_TEST:
             /* 测试模式由 app_test 模块处理 */
+            break;
+            
+        case STATE_ID_ERROR:
+        case STATE_ID_SHUTDOWN:
+            Car_Stop();
             break;
             
         default:
@@ -80,10 +90,10 @@ void Car_UpdateDisplay(void)
     
     OLED_Clear();
     
-    /* 显示模式 */
-    char *mode_str[] = {"STOP", "MANUAL", "TRACK", "AVOID", "TEST"};
-    OLED_ShowString(0, 0, "Mode:", OLED_6X8);
-    OLED_ShowString(0, 30, mode_str[CarState.mode], OLED_6X8);
+    /* 显示系统状态 */
+    const char* state_name = SM_GetStateName(SM_GetCurrentState(System_GetStateMachine()));
+    OLED_ShowString(0, 0, "State:", OLED_6X8);
+    OLED_ShowString(0, 30, (char*)state_name, OLED_6X8);
     
     /* 显示速度 */
     OLED_ShowString(0, 8, "L:", OLED_6X8);
@@ -99,17 +109,36 @@ void Car_UpdateDisplay(void)
 }
 
 /**
- * @brief 设置小车工作模式
+ * @brief 设置小车工作模式（通过状态机事件触发）
  */
 void Car_SetMode(CarMode_TypeDef mode)
 {
-    CarState.mode = mode;
+    /* 将小车模式映射到系统状态机事件 */
+    StateEvent_TypeDef event = EVENT_NONE;
     
-    /* 发送模式切换通知 */
-    const char *mode_str[] = {"STOP", "MANUAL", "TRACK", "AVOID", "TEST"};
-    BT_SendString("Mode: ");
-    BT_SendString((char*)mode_str[mode]);
-    BT_SendString("\r\n");
+    switch(mode)
+    {
+        case CAR_MODE_STOP:
+            event = EVENT_STOP;
+            break;
+        case CAR_MODE_MANUAL:
+            event = EVENT_MANUAL_CTRL;
+            break;
+        case CAR_MODE_TRACK:
+            event = EVENT_AUTO_TRACK;
+            break;
+        case CAR_MODE_AVOIDANCE:
+            event = EVENT_AUTO_AVOID;
+            break;
+        case CAR_MODE_TEST:
+            event = EVENT_TEST_MODE;
+            break;
+        default:
+            return;
+    }
+    
+    /* 触发状态机事件 */
+    SM_TriggerEvent(System_GetStateMachine(), event);
 }
 
 /**
