@@ -20,4 +20,9 @@ void BT_Init(void);
 void BT_SendString(char *String);
 void BT_SendByte(uint8_t Byte);
 
+void BT_SendDebugInfo(char *info, int32_t value);
+void BT_SendPIDStatus(void);
+uint8_t BT_ParsePIDParams(void);
+void BT_ProcessPacket(void);
+
 #endif

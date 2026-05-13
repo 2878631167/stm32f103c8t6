@@ -1,5 +1,8 @@
 #include "Bsp.h"
 
+PID_TypeDef PID_Steer;
+volatile uint8_t PID_Updated = 0;
+
 void Bsp_InitAll(void)
 {
     SystemClock_Config();
@@ -9,6 +12,8 @@ void Bsp_InitAll(void)
     L298N_Init();
     Track_Init();
     Delay_Init();
+    
+    PID_Init(&PID_Steer, 1.0f, 0.1f, 0.05f, 100.0f, -100.0f);
 }
 
 void Bsp_TestAll(void)
@@ -140,10 +145,18 @@ int main(void)
 
         if (BT_RxFlag == 1)
         {
-            BT_RxFlag = 0;
+            BT_ProcessPacket();
+
             OLED_Clear();
             OLED_ShowString(1, 1, "RX:");
             OLED_ShowString(2, 1, (char*)BT_RxPacket);
+        }
+        
+        if (PID_Updated == 1)
+        {
+            BT_SendString("PID: Kp=");
+            
+            PID_Updated = 0;
         }
     }
 }
